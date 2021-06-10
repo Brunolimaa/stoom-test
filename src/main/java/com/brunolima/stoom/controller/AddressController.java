@@ -33,11 +33,7 @@ public class AddressController {
     @PostMapping
     @ApiOperation(value="Create a new address")
     public MessageResponseDTO create(@RequestBody @Valid AddressDTO addressDTO) {
-        if(addressDTO.getLatitude() == null && addressDTO.getLongitude() == null){
-            GeocodeResultDTO geoCode = restTemplate.getForObject("https://maps.googleapis.com/maps/api/geocode/json?address="+addressDTO+"&key="+API_KEY, GeocodeResultDTO.class);
-            addressDTO.setLatitude(geoCode.getResults().get(0).getGeometry().getLocation().getLat());
-            addressDTO.setLongitude(geoCode.getResults().get(0).getGeometry().getLocation().getLng());
-        }
+        callApiGoogleMap(addressDTO);
         return addressService.create(addressDTO);
     }
 
@@ -57,9 +53,10 @@ public class AddressController {
 
     @PutMapping("/{id}")
     @ApiOperation(value="Update address selected")
-    public ResponseEntity<MessageResponseDTO> update(@RequestBody AddressDTO entity, @PathVariable Long id) {
-        entity.setId(id);
-        addressService.update(entity);
+    public ResponseEntity<MessageResponseDTO> update(@RequestBody AddressDTO addressDTO, @PathVariable Long id) {
+        addressDTO.setId(id);
+        callApiGoogleMap(addressDTO);
+        addressService.update(addressDTO);
         return ResponseEntity.ok().body(MessageResponseDTO.builder().message("successfully update").build());
     }
 
@@ -69,4 +66,15 @@ public class AddressController {
         addressService.delete(id);
         return ResponseEntity.ok().body(MessageResponseDTO.builder().message("successfully deleted").build());
     }
+
+    private void callApiGoogleMap(AddressDTO addressDTO) {
+        if(addressDTO.getLatitude() == null && addressDTO.getLongitude() == null){
+            GeocodeResultDTO geoCode = restTemplate.getForObject("https://maps.googleapis.com/maps/api/geocode/json?address="+addressDTO+"&key="+API_KEY, GeocodeResultDTO.class);
+            addressDTO.setLatitude(geoCode.getResults().get(0).getGeometry().getLocation().getLat());
+            addressDTO.setLongitude(geoCode.getResults().get(0).getGeometry().getLocation().getLng());
+        }
+    }
+
+
+
 }
